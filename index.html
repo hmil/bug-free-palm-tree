@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:bx="https://boxy-svg.com" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>AnimaStudio</title>
+    <style>
+        body, html, #app {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #1c1c1c;
+            overscroll-behavior: none;
+        }
+        ::selection {
+            background: #d6b30a; /* WebKit/Blink Browsers */
+        }
+        ::-moz-selection {
+            background: #d6b30a; /* Gecko Browsers */
+        }
+        * {
+            box-sizing: border-box;
+        }
+
+        .canvas svg {
+            height: 100%;
+            width: auto;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <script src="dist/vendors.bundle.js"></script>
+        <!-- <script src="node_modules/react/umd/react.development.js"></script>
+        <script src="node_modules/react-dom/umd/react-dom.development.js"></script> -->
+        <script src="dist/app.bundle.js"></script>
+    </div>
+</body>
+</html>
