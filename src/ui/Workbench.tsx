@@ -9,7 +9,8 @@ const CONTAINER_STYLE: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: COLOR_BG_0,
-    height: '100%'
+    height: '100%',
+    userSelect: 'none'
 };
 
 export function Workbench() {

@@ -54,6 +54,7 @@ export class ExportService {
             const blob = new Blob([text], { type: 'image/svg+xml' });
             const data = window.URL.createObjectURL(blob);
             const img = await this.renderImage(data);
+            window.URL.revokeObjectURL(data);
 
             const fileName = `img-${i.toString(10).padStart(6, '0')}.png`;
             archive.add(img, `export/${fileName}`);

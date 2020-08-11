@@ -1,10 +1,11 @@
 import { AnimationKeyFrame } from 'animation/domain/AnimationModel';
 import * as React from 'react';
-import { AppContext } from 'ui/AppContext';
 import { movePlayHeadAction, toggleKeyFrameSelection, unselectAllKeyframesAction } from 'ui/state/AppActions';
 import { COLOR_BG_0, COLOR_BG_3, COLOR_BG_4, COLOR_HIGHLIGHT } from 'ui/styles/colors';
 
 import { TIMELINE_HEADER_WIDTH_PX } from './style';
+import { useStateDispatch, useStateSelector } from 'ui/state/AppReducer';
+import { AppServices } from 'ui/AppContext';
 
 interface KeyFrameProps {
     groupId: string;
@@ -14,11 +15,16 @@ interface KeyFrameProps {
 
 export function KeyFrame(props: KeyFrameProps) {
 
-    const { state, dispatch, animationService, multiSelectService } = React.useContext(AppContext);
+    const { animationService, multiSelectService } = React.useContext(AppServices);
 
-    const position = props.keyFrame.time / state.timeline.msPerPx;
-    const isCurrent = React.useMemo(() => state.playHead === props.keyFrame.time, [props.keyFrame, state.playHead]);
-    const isSelected = state.selectedEntities?.some(e => e.type === 'keyframe' && e.id === props.keyFrame.id);
+    const dispatch = useStateDispatch();
+    const timeline = useStateSelector(s => s.timeline);
+    const playHead = useStateSelector(s => s.playHead);
+    const selectedEntities = useStateSelector(s => s.selectedEntities);
+
+    const position = props.keyFrame.time / timeline.msPerPx;
+    const isCurrent = React.useMemo(() => playHead === props.keyFrame.time, [props.keyFrame, playHead]);
+    const isSelected = selectedEntities?.some(e => e.type === 'keyframe' && e.id === props.keyFrame.id);
 
     const elementRef = React.useRef<HTMLDivElement>(null);
 
@@ -33,7 +39,7 @@ export function KeyFrame(props: KeyFrameProps) {
         evt.stopPropagation();
         evt.nativeEvent.stopImmediatePropagation();
         const hasModifier = evt.metaKey || evt.ctrlKey;
-        const deltaX = position - evt.clientX + TIMELINE_HEADER_WIDTH_PX - state.timeline.msOffset / state.timeline.msPerPx;
+        const deltaX = position - evt.clientX + TIMELINE_HEADER_WIDTH_PX - timeline.msOffset / timeline.msPerPx;
 
         let startTime: number = props.keyFrame.time;
         let hasMoved = false;
@@ -84,7 +90,7 @@ export function KeyFrame(props: KeyFrameProps) {
             window.removeEventListener('mousemove', mouseMove);
             window.removeEventListener('mouseup', mouseUp);
         }
-    }, [position, props.groupId, props.propertyId, props.keyFrame, isSelected, state.timeline]);
+    }, [position, props.groupId, props.propertyId, props.keyFrame, isSelected, timeline]);
 
     const style = React.useMemo((): React.CSSProperties => ({
         position: 'absolute',

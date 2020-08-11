@@ -20,6 +20,9 @@ export class MultiSelectService {
     }
 
     public getKeyFramesInArea(x1: number, y1: number, x2: number, y2: number): KeyFrameId[] {
+        const [startX, endX] = x1 > x2 ? [x2, x1] : [x1, x2];
+        const [startY, endY] = y1 > y2 ? [y2, y1] : [y1, y2];
+
         let ret: KeyFrameId[] = [];
         for (const [id, ref] of this.elements.entries()) {
             if (ref.current == null) {
@@ -27,7 +30,7 @@ export class MultiSelectService {
                 continue;
             }
             const clientRect = ref.current.getBoundingClientRect();
-            if (clientRect.x > x1 && clientRect.x < x2 && clientRect.y > y1 && clientRect.y < y2) {
+            if (clientRect.x + clientRect.width > startX && clientRect.x < endX && clientRect.y + clientRect.height > startY && clientRect.y < endY) {
                 ret.push(id);
             }
         }

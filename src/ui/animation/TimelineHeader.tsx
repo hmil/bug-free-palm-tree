@@ -1,21 +1,26 @@
 import * as React from 'react';
-import { COLOR_BG_4 } from 'ui/styles/colors';
+import { uniqId } from 'std/uid';
+import { AppServices } from 'ui/AppContext';
+import { addGroupAction, loadSvgAction, selectElementAction } from 'ui/state/AppActions';
+import { useStateDispatch, useStateSelector } from 'ui/state/AppReducer';
+import { isElementSelection } from 'ui/state/AppState';
+import { COLOR_BG_3, COLOR_BG_DELIMITER } from 'ui/styles/colors';
 import { Button } from 'ui/widgets/Button';
 
 import { TIMELINE_HEADER_HEIGHT } from './style';
-import { AppContext } from 'ui/AppContext';
-import { addGroupAction, selectElementAction, loadSvgAction } from 'ui/state/AppActions';
-import { uniqId } from 'std/uid';
-import { isElementSelection } from 'ui/state/AppState';
 
 export function TimelineHeader() {
 
-    const { state, dispatch } = React.useContext(AppContext);
+    const { animationService } = React.useContext(AppServices);
+    
+    const selectedEntities = useStateSelector(s => s.selectedEntities);
+    const playHead = useStateSelector(s => s.playHead);
+    const dispatch = useStateDispatch();
 
     const addGroup = React.useCallback(() => {
         const elementSelectors: string[] = [];
 
-        state.selectedEntities?.forEach(e => {
+        selectedEntities?.forEach(e => {
             if (e.type === 'element') {
                 const el = document.querySelector(e.path);
                 const canvas = document.getElementById('hmil-anim-canvas');
@@ -39,16 +44,23 @@ export function TimelineHeader() {
         dispatch(addGroupAction({
             elementSelectors
         }));
-    }, [dispatch, state.selectedEntities]);
+    }, [dispatch, selectedEntities]);
+
+    const masterTime = animationService.formatTime(playHead);
 
     return <div style={{
         height: TIMELINE_HEADER_HEIGHT,
-        backgroundColor: COLOR_BG_4,
+        backgroundColor: COLOR_BG_3,
+        border: `1px ${COLOR_BG_DELIMITER} solid`,
         display: 'flex',
         justifyContent: 'space-around',
         alignItems: 'center',
     }}>
-        <div>{ state.selectedEntities?.filter(isElementSelection).map(e => e.path).join(', ') }</div>
+        <div>{ selectedEntities?.filter(isElementSelection).map(e => e.path).join(', ') }</div>
         <Button onClick={addGroup} value="Add group"/>
+        <div style={{
+            fontWeight: 'bold',
+            fontSize: '20px'
+        }}>{masterTime}</div>
     </div>;
 }

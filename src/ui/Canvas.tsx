@@ -1,11 +1,12 @@
 import { GsapAnimationService } from 'animation/gsap/GsapAnimationService';
 import * as React from 'react';
 
-import { AppContext } from './AppContext';
 import { selectElementAction, unselectAllElementsAction } from './state/AppActions';
 import { isElementSelection } from './state/AppState';
 import { COLOR_HIGHLIGHT, COLOR_TEXT_MAIN } from './styles/colors';
 import { defined } from 'std/null-utils';
+import { useStateSelector, useStateDispatch } from './state/AppReducer';
+import { AppServices } from './AppContext';
 
 const CANVAS_STYLE: React.CSSProperties = {
     height: '100%',
@@ -18,8 +19,14 @@ const IMG_STYLE: React.CSSProperties = {
 
 export function Canvas() {
 
-    const { state, exportService, dispatch } = React.useContext(AppContext);
+    const { exportService } = React.useContext(AppServices);
     const [canvas, setCanvas] = React.useState<HTMLDivElement | null>(null);
+
+    const dispatch = useStateDispatch();
+    const svgSource = useStateSelector(s => s.svgSource);
+    const playHead = useStateSelector(s => s.playHead);
+    const animations = useStateSelector(s => s.animations);
+    const selectedEntities = useStateSelector(s => s.selectedEntities);
 
     const canvasRef = React.useCallback((el: HTMLDivElement) => {
         setCanvas(el);
@@ -34,10 +41,10 @@ export function Canvas() {
         let aborted = false;
 
         async function perform() {
-            if (state.svgSource == null) {
+            if (svgSource == null) {
                 return;
             }
-            const res = await fetch(state.svgSource);
+            const res = await fetch(svgSource);
             const txt = await res.text();
 
             if (canvas != null && !aborted) {
@@ -51,24 +58,24 @@ export function Canvas() {
         return () => {
             aborted = true;
         };
-    }, [state.svgSource, canvas]);
+    }, [svgSource, canvas]);
 
     const [tl, setTl] = React.useState<gsap.core.Timeline | null>(null);
     React.useEffect(() => {
-        const tl = gsapService.convertToGsap(state.animations);
+        const tl = gsapService.convertToGsap(animations);
         setTl(tl);
         return () => {
             tl.pause(0);
             tl.kill();
         }
-    }, [version, state.animations]);
+    }, [version, animations]);
 
     React.useEffect(() => {
         if (!tl) {
             return;
         }
-        tl.pause(state.playHead / 1000);
-    }, [state.playHead, tl]);
+        tl.pause(playHead / 1000);
+    }, [playHead, tl]);
 
     const [canvasRect, setCanvasRect] = React.useState<DOMRect>();
     const measuredRef = React.useCallback((node: HTMLDivElement | null) => {
@@ -79,10 +86,10 @@ export function Canvas() {
 
     const [hoverBox, setHoverBox] = React.useState<React.CSSProperties | null>(null);
 
-    const selectedNodes = React.useMemo(() => state.selectedEntities?.filter(isElementSelection)
+    const selectedNodes = React.useMemo(() => selectedEntities?.filter(isElementSelection)
                 .map(e => document.querySelector(e.path))
                 .filter(defined) ?? [],
-    [state.selectedEntities]);
+    [selectedEntities]);
 
 
     const onMouseOver = React.useCallback((evt: React.MouseEvent) => {

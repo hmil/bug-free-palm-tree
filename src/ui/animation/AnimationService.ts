@@ -1,7 +1,7 @@
 import { TIMELINE_HEADER_WIDTH_PX } from './style';
 import { AppState, isKeyFrameSelection } from 'ui/state/AppState';
 import { AppActions } from 'ui/state/AppReducer';
-import { updateKeyFrameAction } from 'ui/state/AppActions';
+import { updateKeyFrameAction, movePlayHeadAction } from 'ui/state/AppActions';
 import { defined } from 'std/null-utils';
 import { AnimationKeyFrame } from 'animation/domain/AnimationModel';
 
@@ -71,6 +71,44 @@ export class AnimationService {
             };
         })();
         return new KeyFrameMovement(this, getKeyFrames, this.dispatch);
+    }
+
+    formatTime(timeMS: number): string {
+        const timeSeconds = timeMS / 1000;
+        const second = Math.floor(timeSeconds);
+        const secondMs = timeSeconds - second;
+        const state = this.getState();
+        const minutes = Math.floor(second / 60);
+        return `${String(minutes).padStart(2, '0')}:${String(second % 60).padStart(2, '0')}.${Math.round(secondMs * state.animations.framesPerSecond) + 1}`;
+    }
+
+    
+    isPlaying = false;
+    previousTime = 0;
+
+    togglePlay(): void {
+        if (this.isPlaying) {
+            this.isPlaying = false;
+        } else {
+            this.isPlaying = true;
+            requestAnimationFrame(this.animFrame);
+        }
+    }
+
+    animFrame = (time: number) => {
+        if (this.isPlaying) {
+            this.playStep(time);
+            requestAnimationFrame(this.animFrame)
+        }
+    }
+
+    playStep(time: number): void {
+        const state = this.getState();
+        if (time - this.previousTime > 1000 / state.animations.framesPerSecond) {
+            this.previousTime = time;
+            console.log(time);
+            this.dispatch(movePlayHeadAction(state.playHead + 1000 / state.animations.framesPerSecond));
+        }
     }
 }
 

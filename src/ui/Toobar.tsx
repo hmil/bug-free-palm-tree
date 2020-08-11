@@ -2,8 +2,9 @@ import * as React from 'react';
 
 import { COLOR_BG_2 } from './styles/colors';
 import { Button } from './widgets/Button';
-import { AppContext } from './AppContext';
 import { DomainSerializationService } from 'animation/domain/DomainSerializationService';
+import { useStateSelector } from './state/AppReducer';
+import { AppServices } from './AppContext';
 
 export interface ToolbarProps {
     title: string;
@@ -13,7 +14,12 @@ export function Toolbar(props: ToolbarProps) {
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    const { loadSaveService, exportService, state } = React.useContext(AppContext);
+    const focksSinkRef = React.useRef<HTMLButtonElement>(null);
+
+    const { loadSaveService, exportService } = React.useContext(AppServices);
+
+    const svgSource = useStateSelector(s => s.svgSource);
+    const animations = useStateSelector(s => s.animations);
 
     const domainSerializationService = React.useMemo(() => new DomainSerializationService(), []);
 
@@ -33,23 +39,26 @@ export function Toolbar(props: ToolbarProps) {
             loadSaveService.load(item);
         };
         fileInputRef.current?.click();
+        focksSinkRef.current?.focus();
     }, [fileInputRef]);
 
     const onSave = () => {
         loadSaveService.save({
             metadata: {
-                animations: domainSerializationService.serialize(state.animations),
+                animations: domainSerializationService.serialize(animations),
                 version: 1
             },
-            svgSource: state.svgSource || ''
-        })
+            svgSource: svgSource || ''
+        });
+        focksSinkRef.current?.focus();
     };
 
     const onExport = () => {
-        exportService.exportAnimation(state.animations, {
-            durationSeconds: 3.5,
+        exportService.exportAnimation(animations, {
+            durationSeconds: 1.5,
             frameRate: 30
         });
+        focksSinkRef.current?.focus();
     };
 
     return <div
@@ -64,11 +73,12 @@ export function Toolbar(props: ToolbarProps) {
             justifyContent: 'space-between',
             fontSize: '14px'
         }}>
+            <button style={{ display: 'none' }} ref={focksSinkRef} />
             <input type="file" accept="image/svg+xml" style={{ display: 'none' }} ref={fileInputRef} value=""/>
             <div>
                 <Button value="Open" onClick={onOpen} />
-                <Button value="Save" onClick={onSave} disabled={state.svgSource == null} />
-                <Button value="Export" onClick={onExport} disabled={state.svgSource == null} />
+                <Button value="Save" onClick={onSave} disabled={svgSource == null} />
+                <Button value="Export" onClick={onExport} disabled={svgSource == null} />
                 {/* actions */}
             </div>
             <div style={{

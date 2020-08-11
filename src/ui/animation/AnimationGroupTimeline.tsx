@@ -1,8 +1,8 @@
 import { AnimationGroup, AnimationProperty } from 'animation/domain/AnimationModel';
 import * as React from 'react';
 import { arrayReplace } from 'std/readonly-arrays';
-import { AppContext } from 'ui/AppContext';
 import { editGroupAction, selectElementAction, unselectAllElementsAction } from 'ui/state/AppActions';
+import { useStateDispatch, useStateSelector } from 'ui/state/AppReducer';
 import { COLOR_BG_0, COLOR_BG_3 } from 'ui/styles/colors';
 
 import { AnimationPropertyTimeline } from './AnimationPropertyTimeline';
@@ -19,7 +19,11 @@ const CONTAINER_STYLE: React.CSSProperties = {
 };
 
 export function AnimationGroupTimeline(props: AnimationGroupProps) {
-    const { state, dispatch } = React.useContext(AppContext);
+
+    const dispatch = useStateDispatch();
+
+    const selectedEntities = useStateSelector(s => s.selectedEntities);
+    const timeline = useStateSelector(s => s.timeline);
 
     const onPropertyChange = React.useCallback((previous: AnimationProperty, next: AnimationProperty) => {
         const idx = props.group.properties.indexOf(previous);
@@ -36,12 +40,12 @@ export function AnimationGroupTimeline(props: AnimationGroupProps) {
         }));
     }, []);
 
-    const isSelected = state.selectedEntities.some(s => s.type === 'element' && props.group.elementSelectors.indexOf(s.path) >= 0);
+    const isSelected = selectedEntities.some(s => s.type === 'element' && props.group.elementSelectors.indexOf(s.path) >= 0);
 
     const style = React.useMemo(() => ({
         ...CONTAINER_STYLE,
         backgroundColor: isSelected ? COLOR_BG_3 : undefined
-    }), [isSelected, state.timeline.msPerPx]);
+    }), [isSelected, timeline.msPerPx]);
 
     return <div style={style} onClick={onClick}>
         <div style={{height: '24px'}}></div>

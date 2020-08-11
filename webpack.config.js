@@ -3,7 +3,7 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin')
 
 module.exports = {
     entry: {
-        app: './src/modules/main.ts',
+        app: './src/modules/main.tsx',
     },
     // mode: 'production',
     output: {

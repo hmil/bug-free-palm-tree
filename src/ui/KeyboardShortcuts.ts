@@ -1,21 +1,27 @@
 import * as React from 'react';
 
-import { AppContext } from './AppContext';
 import { movePlayHeadAction, removeKeyFrameAction, timelineZoomAction } from './state/AppActions';
 import { DomainSerializationService } from 'animation/domain/DomainSerializationService';
+import { useStateDispatch, useStateSelector } from './state/AppReducer';
+import { AppServices } from './AppContext';
 
 export function useKeyboardShortcuts() {
 
-    const { state, dispatch, loadSaveService } = React.useContext(AppContext);
+    const { loadSaveService, animationService } = React.useContext(AppServices);
     const domainSerializationService = React.useMemo(() => new DomainSerializationService(), []);
 
+    const dispatch = useStateDispatch();
+    const playHead = useStateSelector(s => s.playHead);
+    const animations = useStateSelector(s => s.animations);
+    const selectedEntities = useStateSelector(s => s.selectedEntities);
+    const svgSource = useStateSelector(s => s.svgSource);
 
     React.useEffect(() => {
         const handler = (evt: KeyboardEvent) => {
             console.log(evt.key);
             switch (evt.key) {
                 case 'ArrowLeft': {
-                    let time = Math.round(state.playHead * state.animations.framesPerSecond / 1000 - 1) / state.animations.framesPerSecond * 1000;
+                    let time = Math.round(playHead * animations.framesPerSecond / 1000 - 1) / animations.framesPerSecond * 1000;
                     if (time < 0) {
                         time = 0;
                     }
@@ -23,7 +29,7 @@ export function useKeyboardShortcuts() {
                     break;
                 }
                 case 'ArrowRight': {
-                    let time = Math.round(state.playHead * state.animations.framesPerSecond / 1000 + 1) / state.animations.framesPerSecond * 1000;
+                    let time = Math.round(playHead * animations.framesPerSecond / 1000 + 1) / animations.framesPerSecond * 1000;
                     if (time < 0) {
                         time = 0;
                     }
@@ -31,7 +37,7 @@ export function useKeyboardShortcuts() {
                     break;
                 }
                 case 'Backspace': {
-                    state.selectedEntities?.forEach(e => {
+                    selectedEntities?.forEach(e => {
                         if (e.type === 'keyframe') {
                             dispatch(removeKeyFrameAction({
                                 groupId: e.groupId,
@@ -55,20 +61,24 @@ export function useKeyboardShortcuts() {
                         evt.preventDefault();
                         loadSaveService.save({
                             metadata: {
-                                animations: domainSerializationService.serialize(state.animations),
+                                animations: domainSerializationService.serialize(animations),
                                 version: 1
                             },
-                            svgSource: state.svgSource || ''
+                            svgSource: svgSource || ''
                         });
                     }
                     break;
                 }
                 case '+': {
-                    dispatch(timelineZoomAction({ factor: 0.9, center: state.playHead}));
+                    dispatch(timelineZoomAction({ factor: 0.9, center: playHead}));
                     break;
                 }
                 case '-': {
-                    dispatch(timelineZoomAction({ factor: 1.1, center: state.playHead}));
+                    dispatch(timelineZoomAction({ factor: 1.1, center: playHead}));
+                    break;
+                }
+                case ' ': {
+                    animationService.togglePlay();
                     break;
                 }
             }
@@ -78,5 +88,5 @@ export function useKeyboardShortcuts() {
         return () => {
             window.removeEventListener('keydown', handler);
         }
-    }, [state.playHead, state.selectedEntities, state.playHead, state.svgSource]);
+    }, [selectedEntities, playHead, svgSource, animations]);
 }

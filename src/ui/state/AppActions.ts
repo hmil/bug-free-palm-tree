@@ -65,10 +65,15 @@ export const editGroupAction = action('editGroupAction', (state: AppState, group
     };
 });
 
-export const movePlayHeadAction = action('movePlayHeadAction', (state: AppState, position: number): AppState => ({
-    ...state,
-    playHead: position
-}));
+export const movePlayHeadAction = action('movePlayHeadAction', (state: AppState, position: number): AppState => {
+    if (state.playHead === position) {
+        return state;
+    }
+    return {
+        ...state,
+        playHead: position
+    };
+});
 
 export const addKeyFrameAction = action('addKeyFrameAction', (state: AppState, {groupId, propertyId, keyFrame}: {groupId: string, propertyId: string, keyFrame: AnimationKeyFrame}): AppState => {
     const group = state.animations.groups.findIndex(g => g.id === groupId);
@@ -164,6 +169,13 @@ export const selectKeyFrameAction = action('selectKeyFrameAction', (state: AppSt
                 propId: keyFrameId.propId
             }
         ]
+    };
+});
+
+export const unSelectKeyFrameAction = action('unSelectKeyFrameAction', (state: AppState, {keyFrameId}: {keyFrameId: KeyFrameId}): AppState => {
+    return {
+        ...state,
+        selectedEntities: state.selectedEntities.filter(e => e.type !== 'keyframe' || e.id !== keyFrameId.id)
     };
 });
 

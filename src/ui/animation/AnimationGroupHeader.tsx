@@ -2,8 +2,8 @@ import { AnimationGroup, AnimationProperty } from 'animation/domain/AnimationMod
 import * as React from 'react';
 import { arrayInsert, arrayReplace } from 'std/readonly-arrays';
 import { uniqId } from 'std/uid';
-import { AppContext } from 'ui/AppContext';
-import { editGroupAction, unselectAllElementsAction, selectElementAction, removeGroupAction } from 'ui/state/AppActions';
+import { editGroupAction, removeGroupAction, selectElementAction, unselectAllElementsAction } from 'ui/state/AppActions';
+import { useStateDispatch, useStateSelector } from 'ui/state/AppReducer';
 import { COLOR_BG_0, COLOR_BG_4 } from 'ui/styles/colors';
 import { Button } from 'ui/widgets/Button';
 import { TextInput } from 'ui/widgets/TextInput';
@@ -22,9 +22,11 @@ const CONTAINER_STYLE: React.CSSProperties = {
 };
 
 
-export function AnimationGroupHeader(props: AnimationGroupProps) {
+export const AnimationGroupHeader = React.memo(function _AnimationGroupHeader(props: AnimationGroupProps) {
 
-    const { state, dispatch } = React.useContext(AppContext);
+    const dispatch = useStateDispatch();
+    const selectedEntities = useStateSelector(s => s.selectedEntities);
+
     const value = props.group.elementSelectors.join(', ');
 
     const onSelectorChange = React.useCallback((newValue: string) => {
@@ -54,7 +56,7 @@ export function AnimationGroupHeader(props: AnimationGroupProps) {
         dispatch(removeGroupAction({ groupId: props.group.id }));
     }, []);
 
-    const isSelected = state.selectedEntities.some(s => s.type === 'element' && props.group.elementSelectors.indexOf(s.path) >= 0);
+    const isSelected = selectedEntities.some(s => s.type === 'element' && props.group.elementSelectors.indexOf(s.path) >= 0);
     const style = React.useMemo(() => ({
         ...CONTAINER_STYLE,
         backgroundColor: isSelected ? COLOR_BG_4 : undefined
@@ -73,4 +75,4 @@ export function AnimationGroupHeader(props: AnimationGroupProps) {
             { props.group.properties.map((p, i) => <AnimationPropertyHeader key={i} property={p} groupId={props.group.id} onChange={onPropertyChange} />)}
         </div>
     </div>;
-}
+});

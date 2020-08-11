@@ -1,11 +1,11 @@
-import * as React from 'react';
 import { AnimationProperty } from 'animation/domain/AnimationModel';
-import { TextInput } from 'ui/widgets/TextInput';
-import { AppContext } from 'ui/AppContext';
-import { arrayReplace } from 'std/readonly-arrays';
-import { addKeyFrameAction } from 'ui/state/AppActions';
-import { uniqId } from 'std/uid';
 import gsap from 'gsap';
+import * as React from 'react';
+import { arrayReplace } from 'std/readonly-arrays';
+import { uniqId } from 'std/uid';
+import { addKeyFrameAction } from 'ui/state/AppActions';
+import { useStateDispatch, useStateSelector } from 'ui/state/AppReducer';
+import { TextInput } from 'ui/widgets/TextInput';
 
 interface AnimationPropertyHeaderProps {
     groupId: string;
@@ -15,11 +15,13 @@ interface AnimationPropertyHeaderProps {
 
 export function AnimationPropertyHeader(props: AnimationPropertyHeaderProps) {
 
-    const { state, dispatch } = React.useContext(AppContext);
+    const dispatch = useStateDispatch();
+    const playHead = useStateSelector(s => s.playHead);
+    const animations = useStateSelector(s => s.animations);
 
-    const currentKf = props.property.keyFrames.find(kf => kf.time === state.playHead);
+    const currentKf = props.property.keyFrames.find(kf => kf.time === playHead);
     const currentValue = currentKf != null ? (typeof currentKf.value === 'string' ? currentKf.value : JSON.stringify(currentKf.value)) :
-        String(gsap.getProperty(state.animations.groups.find(g => g.id === props.groupId)?.elementSelectors.join(', ') ?? '', props.property.name));
+        String(gsap.getProperty(animations.groups.find(g => g.id === props.groupId)?.elementSelectors.join(', ') ?? '', props.property.name));
         // (document.querySelector(state.animations.groups.find(g => g.id === props.groupId)?.elementSelectors.join(', ') ?? '') as HTMLElement)
         //     ?.style[props.property.name as any];
 
@@ -44,14 +46,14 @@ export function AnimationPropertyHeader(props: AnimationPropertyHeaderProps) {
             return;
         }
         const v = value;
-        const k = props.property.keyFrames.findIndex(k => k.time === state.playHead);
+        const k = props.property.keyFrames.findIndex(k => k.time === playHead);
         if (k < 0) {
             dispatch(addKeyFrameAction({
                 groupId: props.groupId,
                 propertyId: props.property.id,
                 keyFrame: {
                     id: uniqId(),
-                    time: state.playHead,
+                    time: playHead,
                     value: v
                 }
             }));
@@ -63,9 +65,9 @@ export function AnimationPropertyHeader(props: AnimationPropertyHeaderProps) {
                 })
             });
         }
-    }, [props.property, props.onChange, state.playHead, currentValue]);
+    }, [props.property, props.onChange, playHead, currentValue]);
 
-    return <div style={{padding: '5px', paddingBottom: '0'}}>
+    return <div style={{padding: '5px', paddingBottom: '0', display: 'flex'}}>
         <div style={{
             display: 'inline-block',
             width: '100px'
@@ -74,7 +76,7 @@ export function AnimationPropertyHeader(props: AnimationPropertyHeaderProps) {
         </div>
         <div style={{
             display: 'inline-block',
-            width: '200px',
+            flexGrow: 1,
             marginLeft: '5px'
         }}>
             <TextInput value={currentValue} onChange={onValueChange} />

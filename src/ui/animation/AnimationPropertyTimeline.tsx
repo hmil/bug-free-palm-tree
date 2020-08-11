@@ -1,8 +1,9 @@
 import { AnimationProperty } from 'animation/domain/AnimationModel';
 import * as React from 'react';
 import { uniqId } from 'std/uid';
-import { AppContext } from 'ui/AppContext';
+import { AppServices } from 'ui/AppContext';
 import { addKeyFrameAction, toggleKeyFrameSelection } from 'ui/state/AppActions';
+import { useStateDispatch, useStateSelector } from 'ui/state/AppReducer';
 
 import { KeyFrame } from './KeyFrame';
 
@@ -15,7 +16,9 @@ interface AnimationPropertyTimelineProps {
 
 export function AnimationPropertyTimeline(props: AnimationPropertyTimelineProps) {
 
-    const { state, dispatch, animationService } = React.useContext(AppContext);
+    const dispatch = useStateDispatch();
+    const { animationService } = React.useContext(AppServices);
+    const timeline = useStateSelector(s => s.timeline);
 
     const onDoubleClick = React.useCallback((evt: React.MouseEvent) => {
         const keyFrame = {
@@ -33,7 +36,7 @@ export function AnimationPropertyTimeline(props: AnimationPropertyTimelineProps)
             propertyId: props.property.id,
             keyFrame
         }));
-    }, [props.property, props.onChange, state.timeline.msPerPx]);
+    }, [props.property, props.onChange, timeline.msPerPx]);
 
     return <div style={{paddingTop: '5px', height: '29px'}} onDoubleClick={onDoubleClick}>
         {props.property.keyFrames.map(k => <KeyFrame groupId={props.groupId} propertyId={props.id} keyFrame={k} key={k.id} />)}

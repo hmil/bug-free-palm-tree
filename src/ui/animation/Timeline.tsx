@@ -1,20 +1,29 @@
 import * as React from 'react';
-import { AppContext } from 'ui/AppContext';
-import { movePlayHeadAction, timelineZoomAction, unselectAllKeyframesAction, timelineSetOffsetAction, selectKeyFrameAction } from 'ui/state/AppActions';
-import { COLOR_BG_1, COLOR_BG_2, COLOR_BG_3, COLOR_HIGHLIGHT } from 'ui/styles/colors';
+import { AppServices } from 'ui/AppContext';
+import { TIMELINE_DURATION_MS } from 'ui/constants';
+import {
+    selectKeyFrameAction,
+    timelineSetOffsetAction,
+    timelineZoomAction,
+    unselectAllKeyframesAction,
+    unSelectKeyFrameAction,
+} from 'ui/state/AppActions';
+import { COLOR_BG_1, COLOR_BG_2, COLOR_BG_3, COLOR_BG_DELIMITER, COLOR_HIGHLIGHT } from 'ui/styles/colors';
 
 import { AnimationGroupHeader } from './AnimationGroupHeader';
 import { AnimationGroupTimeline } from './AnimationGroupTimeline';
-import { TIMELINE_HEADER_WIDTH_PX } from './style';
+import { TIMELINE_HEADER_WIDTH_PX, TIMELINE_HEADER_HEIGHT } from './style';
 import { TimelineHeader } from './TimelineHeader';
 import { TimelineRuler } from './TimelineRuler';
-import { TIMELINE_DURATION_MS } from 'ui/constants';
+import { useStateDispatch, useStateSelector } from 'ui/state/AppReducer';
+import { TimelineBar } from './TimelineBar';
+import { KeyFrameId } from './MultiSelectService';
 
 const TIMELINE_STYLE: React.CSSProperties = {
     backgroundColor: COLOR_BG_1,
     position: 'relative',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
 }
 
 interface SelectBox {
@@ -30,7 +39,12 @@ export function Timeline() {
 
     const dockRef = React.useRef<HTMLDivElement>(null);
 
-    const { state, dispatch, animationService, multiSelectService } = React.useContext(AppContext);
+    const { animationService, multiSelectService } = React.useContext(AppServices);
+
+    const dispatch = useStateDispatch();
+    const timeline = useStateSelector(s => s.timeline);
+    const selectedEntities = useStateSelector(s => s.selectedEntities);
+    const animations = useStateSelector(s => s.animations);
 
     function startDrag(evt: React.MouseEvent) {
         if (evt.button !== 0) return;
@@ -38,7 +52,7 @@ export function Timeline() {
         const startY = evt.clientY;
 
         function onMove(evt: MouseEvent) {
-            setHeight(height - evt.clientY + startY);
+            setHeight(Math.max(height - evt.clientY + startY, TIMELINE_HEADER_HEIGHT));
         }
 
         function onUp(_evt: MouseEvent) {
@@ -54,41 +68,22 @@ export function Timeline() {
         window.addEventListener('mousemove', onMove);
     }
 
-    // TODO: Move to ruler
-    const onMouseDownRuler = React.useCallback((evt: React.MouseEvent) => {
-        if (evt.button !== 0) {
-            return;
-        }
-        evt.preventDefault();
-        function move(pos: number) {
-            dispatch(movePlayHeadAction(animationService.getSnappedTimeAtPixelOffset(pos)));
-        }
-        move(evt.clientX);
-        function mouseMove(evt: MouseEvent) {
-            move(evt.clientX);
-        }
-        function mouseUp() {
-            window.removeEventListener('mousemove', mouseMove);
-            window.removeEventListener('mouseup', mouseUp);
-        }
-        window.addEventListener('mousemove', mouseMove);
-        window.addEventListener('mouseup', mouseUp);
-    }, [state.timeline, animationService, state.selectedEntities]);
-
     const [selectBox, setSelectBox] = React.useState<SelectBox | null>(null);
+    // const [pendingSelection, setPendingSelection] = React.useState<KeyFrameId[]>([]);
 
     const onMouseDownTimeline = React.useCallback((evt: React.MouseEvent) => {
+        let pendingSelection: KeyFrameId[] = [];
         if (evt.button !== 0) {
             return;
         }
         evt.preventDefault();
 
-        if (!evt.shiftKey) {
+        if (!evt.ctrlKey) {
             dispatch(unselectAllKeyframesAction());
         }
 
         const origin = {
-            x: evt.clientX - (timelineRef.current?.getBoundingClientRect().x ?? 0) - state.timeline.msOffset / state.timeline.msPerPx,
+            x: evt.clientX - (timelineRef.current?.getBoundingClientRect().x ?? 0) - timeline.msOffset / timeline.msPerPx,
             y: evt.clientY - (timelineRef.current?.getBoundingClientRect().y ?? 0)
         };
 
@@ -98,12 +93,13 @@ export function Timeline() {
             x2: origin.x,
             y2: origin.y
         });
+        pendingSelection = [];
 
         function mouseMove(evt: MouseEvent) {
             const dx = (timelineRef.current?.getBoundingClientRect().x ?? 0);
             const dy = (timelineRef.current?.getBoundingClientRect().y ?? 0);
             const dest = {
-                x: evt.clientX - dx - state.timeline.msOffset / state.timeline.msPerPx,
+                x: evt.clientX - dx - timeline.msOffset / timeline.msPerPx,
                 y: evt.clientY - dy
             };
             setSelectBox({
@@ -112,9 +108,19 @@ export function Timeline() {
                 x2: dest.x,
                 y2: dest.y
             });
-            multiSelectService.getKeyFramesInArea(origin.x + dx + state.timeline.msOffset / state.timeline.msPerPx, origin.y + dy, dest.x + dx + state.timeline.msOffset / state.timeline.msPerPx, dest.y + dy).forEach((keyFrameId) => {
-                dispatch(selectKeyFrameAction({keyFrameId}));
+            const current = multiSelectService.getKeyFramesInArea(
+                    origin.x + dx + timeline.msOffset / timeline.msPerPx, origin.y + dy,
+                    dest.x + dx + timeline.msOffset / timeline.msPerPx, dest.y + dy);
+
+            const added = current.filter(c => !pendingSelection.includes(c));
+            added.forEach((keyFrameId) => {
+                    dispatch(selectKeyFrameAction({keyFrameId}));
+                });
+            const removed = pendingSelection.filter(p => !current.includes(p));
+            removed.forEach((keyFrameId) => {
+                dispatch(unSelectKeyFrameAction({keyFrameId}));
             });
+            pendingSelection = current;
         }
         function mouseUp() {
             setSelectBox(null);
@@ -123,7 +129,7 @@ export function Timeline() {
         }
         window.addEventListener('mousemove', mouseMove);
         window.addEventListener('mouseup', mouseUp);
-    }, [state.timeline, animationService, state.selectedEntities]);
+    }, [timeline, animationService, selectedEntities]);
 
     const timelineRef = React.useRef<HTMLDivElement>(null);
 
@@ -135,11 +141,11 @@ export function Timeline() {
             if (evt.shiftKey && direction === 'y') {
                 evt.preventDefault();
                 const factor = 1 + evt.deltaY * 0.01;
-                const center = (evt.clientX - TIMELINE_HEADER_WIDTH_PX) * state.timeline.msPerPx + state.timeline.msOffset;
+                const center = (evt.clientX - TIMELINE_HEADER_WIDTH_PX) * timeline.msPerPx + timeline.msOffset;
                 dispatch(timelineZoomAction({ factor, center }));
             } else if (direction === 'x') {
                 evt.preventDefault();
-                dispatch(timelineSetOffsetAction({ msOffset: state.timeline.msOffset + evt.deltaX * state.timeline.msPerPx }))
+                dispatch(timelineSetOffsetAction({ msOffset: timeline.msOffset + evt.deltaX * timeline.msPerPx }))
             }
         }
         const el = timelineRef.current;
@@ -147,7 +153,7 @@ export function Timeline() {
         return () => {
             el?.removeEventListener('wheel', onWheel);
         }
-    }, [state.timeline]);
+    }, [timeline]);
 
     return <div ref={dockRef} style={{
         ...TIMELINE_STYLE,
@@ -172,7 +178,7 @@ export function Timeline() {
             }}>
                 <TimelineHeader />
             </div>
-            <div onMouseDown={onMouseDownRuler} style={{
+            <div style={{
                 backgroundColor: COLOR_BG_2,
                 flexGrow: 1,
                 position: 'relative',
@@ -191,10 +197,12 @@ export function Timeline() {
             }}>
                 <div style={{
                     width: `${TIMELINE_HEADER_WIDTH_PX}px`,
+                    border: `1px ${COLOR_BG_DELIMITER} solid`,
+                    borderTop: 0,
                     backgroundColor: COLOR_BG_3,
                     flexShrink: 0
                 }}>
-                    { state.animations.groups.map(g => <AnimationGroupHeader key={g.id} group={g} />)}
+                    { animations.groups.map(g => <AnimationGroupHeader key={g.id} group={g} />)}
                 </div>
                 <div onMouseDown={onMouseDownTimeline} style={{
                     backgroundColor: COLOR_BG_2,
@@ -204,19 +212,11 @@ export function Timeline() {
                 }}>
                     <div ref={timelineRef} style={{
                         position: 'absolute',
-                        left: `${-state.timeline.msOffset / state.timeline.msPerPx}px`,
-                        width: TIMELINE_DURATION_MS / state.timeline.msPerPx + (timelineRef.current?.parentElement?.clientWidth ?? 0)
+                        left: `${-timeline.msOffset / timeline.msPerPx}px`,
+                        width: TIMELINE_DURATION_MS / timeline.msPerPx + (timelineRef.current?.parentElement?.clientWidth ?? 0)
                     }}>
-                        { state.animations.groups.map(g => <AnimationGroupTimeline key={g.id} group={g} />)}
-                        <div style={{
-                            backgroundColor: 'red',
-                            position: 'absolute',
-                            top: '0',
-                            width: '1px',
-                            height: '100%',
-                            left: `${state.playHead / state.timeline.msPerPx}px`,
-                            pointerEvents: 'none'
-                        }}></div>
+                        { animations.groups.map(g => <AnimationGroupTimeline key={g.id} group={g} />)}
+                        <TimelineBar />
                     </div>
                     { selectBox && <div style={{
                         position: 'absolute',

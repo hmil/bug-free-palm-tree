@@ -1,27 +1,20 @@
 import * as React from 'react';
-import { LoadSaveService } from 'storage/LoadSaveService';
-import { AppState, appInitialState } from './state/AppState';
-import { AppActions } from './state/AppReducer';
-import { ExportService } from 'export/ExportService';
+
 import { AnimationService } from './animation/AnimationService';
 import { MultiSelectService } from './animation/MultiSelectService';
+import { ExportService } from 'export/ExportService';
+import { LoadSaveService } from 'storage/LoadSaveService';
 
-export interface AppContext {
-    loadSaveService: LoadSaveService;
-    exportService: ExportService;
+export interface AppServices {
     animationService: AnimationService;
     multiSelectService: MultiSelectService;
-    state: AppState;
-    dispatch: React.Dispatch<AppActions>;
-};
+    exportService: ExportService;
+    loadSaveService: LoadSaveService;
+}
 
-export const AppContext = React.createContext<AppContext>({
-    loadSaveService: null as any as LoadSaveService,
-    exportService: null as any as ExportService,
+export const AppServices = React.createContext<AppServices>({
     animationService: null as any as AnimationService,
     multiSelectService: null as any as MultiSelectService,
-    state: appInitialState,
-    dispatch: (_action: AppActions) => {
-        console.error('Context is not set!');
-    }
+    exportService: null as any as ExportService,
+    loadSaveService: null as any as LoadSaveService,
 });
