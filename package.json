@@ -13,7 +13,7 @@
     "@types/react-dom": "^16.9.8",
     "@types/react-redux": "^7.1.9",
     "@types/redux": "^3.6.0",
-    "dompurify": "^2.0.11",
+    "dompurify": "^2.0.17",
     "gsap": "./dont-commit-me/gsap-bonus.tgz",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
