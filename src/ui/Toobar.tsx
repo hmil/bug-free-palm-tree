@@ -55,7 +55,7 @@ export function Toolbar(props: ToolbarProps) {
 
     const onExport = () => {
         exportService.exportAnimation(animations, {
-            durationSeconds: 1.5,
+            durationSeconds: 4,
             frameRate: 30
         });
         focksSinkRef.current?.focus();

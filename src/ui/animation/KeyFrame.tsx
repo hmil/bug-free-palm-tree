@@ -68,8 +68,6 @@ export function KeyFrame(props: KeyFrameProps) {
         function move(pos: number) {
             hasMoved = true;
             const currentTime = animationService.getSnappedTimeAtPixelOffset(pos + deltaX);
-            console.log(deltaX);
-            console.log(currentTime - startTime);
             movement.setOffset(currentTime - startTime);
         }
         function mouseMove(evt: MouseEvent) {

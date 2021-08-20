@@ -4,6 +4,7 @@ import { COLOR_BG_0 } from './styles/colors';
 import { Toolbar } from './Toobar';
 import { Canvas } from './Canvas';
 import { useKeyboardShortcuts } from './KeyboardShortcuts';
+import { ExplorerPanel } from './explorer/ExplorerPanel';
 
 const CONTAINER_STYLE: React.CSSProperties = {
     display: 'flex',
@@ -21,8 +22,11 @@ export function Workbench() {
         <Toolbar title={'animastudio'}/>
         <div style={{
             flexGrow: 1,
-            flexShrink: 1
+            flexShrink: 1,
+            display: 'flex',
+            height: '10px'
         }}>
+            <ExplorerPanel />
             <Canvas />
         </div>
         <Timeline />

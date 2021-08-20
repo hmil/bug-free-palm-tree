@@ -28,8 +28,11 @@ export class ExportService {
     }
 
     setRenderer(renderer: HTMLDivElement | null) {
-        console.log(renderer);
         this.renderer = renderer;
+    }
+
+    getRenderer(): HTMLDivElement | null {
+        return this.renderer;
     }
 
     async exportAnimation(animation: AnimationModel, settings: ExportSettings) {

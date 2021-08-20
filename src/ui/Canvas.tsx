@@ -10,7 +10,9 @@ import { AppServices } from './AppContext';
 
 const CANVAS_STYLE: React.CSSProperties = {
     height: '100%',
-    position: 'relative'
+    position: 'relative',
+    flexGrow: 1,
+    overflow: 'hidden'
 };
 
 const IMG_STYLE: React.CSSProperties = {
@@ -61,6 +63,7 @@ export function Canvas() {
     }, [svgSource, canvas]);
 
     const [tl, setTl] = React.useState<gsap.core.Timeline | null>(null);
+    const [tlRefresh, setTlRefresh] = React.useState(0);
     React.useEffect(() => {
         const tl = gsapService.convertToGsap(animations);
         setTl(tl);
@@ -75,6 +78,7 @@ export function Canvas() {
             return;
         }
         tl.pause(playHead / 1000);
+        setTlRefresh(tlRefresh+1);
     }, [playHead, tl]);
 
     const [canvasRect, setCanvasRect] = React.useState<DOMRect>();
@@ -114,7 +118,7 @@ export function Canvas() {
         }
     }, [canvasRect, selectedNodes]);
 
-    const selectBox = React.useMemo(() => computeSelectBox(selectedNodes), [selectedNodes, canvasRect]);
+    const selectBox = React.useMemo(() => computeSelectBox(selectedNodes), [selectedNodes, canvasRect, tlRefresh]);
     function computeSelectBox(nodes: Array<Element>) {
         if (nodes.length === 0 || canvasRect == null) {
             return undefined;
